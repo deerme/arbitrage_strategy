@@ -5,7 +5,7 @@ ENV PYTHONUNBUFFERED 1
 
 WORKDIR /arbitrage_strategy
 
-COPY ./arbitrage_strategy/pyproject.toml ./arbitrage_strategy/poetry.lock* /arbitrage_strategy/
+COPY ./pyproject.toml ./poetry.lock* /arbitrage_strategy/
 
 # Install Poetry
 RUN pip3 install poetry && \
