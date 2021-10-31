@@ -1,7 +1,6 @@
 import asyncio
 import logging
 from decimal import Decimal
-from threading import Thread
 
 from src.exchange import Exchange
 
@@ -27,25 +26,13 @@ class InterExchangeArbitrationStrategy:
         self.ftx = ftx
         self.binance.attach(self)
         self.ftx.attach(self)
-        self.binance_thread: Thread = None  # type: ignore
-        self.ftx_thread: Thread = None  # type: ignore
 
-    def start(self) -> None:
-        self.binance_thread = Thread(target=asyncio.run, args=(self.binance.start(),))
-        self.ftx_thread = Thread(target=asyncio.run, args=(self.ftx.start(),))
-        self.binance_thread.start()
-        self.ftx_thread.start()
-        logging.info(
-            f"Started watching of the pair of currencies {self.pair} on the exchanges ftx and binance"
-        )
-        self.binance_thread.join()
-        self.ftx_thread.join()
+    async def start(self) -> None:
+        await asyncio.gather(self.binance.start(), self.ftx.start())
 
     def stop(self) -> None:
         self.binance.stop()
         self.ftx.stop()
-        self.binance_thread.join()
-        self.ftx_thread.join()
 
     async def update(self, exchange: Exchange) -> None:
         other = self.get_other_exchange(exchange)

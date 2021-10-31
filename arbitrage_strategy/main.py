@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 import orjson
@@ -11,7 +12,7 @@ format = "%(asctime)s: %(message)s"
 logging.basicConfig(format=format, level=logging.INFO, datefmt="%H:%M:%S")
 
 
-def main():
+async def main():
     with open("config.json") as f:
         config = orjson.loads(f.read())
     pair = config.get("pair")
@@ -27,9 +28,9 @@ def main():
         binance=binance,
         ftx=ftx,
     )
-    strategy.start()
+    await strategy.start()
 
 
 if __name__ == "__main__":
     uvloop.install()
-    main()
+    asyncio.run(main())
