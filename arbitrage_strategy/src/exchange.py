@@ -1,12 +1,11 @@
 import asyncio
-from dataclasses import dataclass
 import logging
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import orjson
 from websockets.client import WebSocketClientProtocol, connect
-from websockets.extensions.permessage_deflate import \
-    ClientPerMessageDeflateFactory
+from websockets.extensions.permessage_deflate import ClientPerMessageDeflateFactory
 
 if TYPE_CHECKING:
     from src.strategy import InterExchangeArbitrationStrategy
@@ -38,9 +37,7 @@ class Exchange:
         self.pair = pair
         self.strategy: "InterExchangeArbitrationStrategy" = None  # type: ignore
         self.timestamp = None
-        self.subscribe_msg: str = self.template_subscribe_msg.format(
-            self.format_pair()
-        )
+        self.subscribe_msg: str = self.template_subscribe_msg.format(self.format_pair())
         self._connection: WebSocketClientProtocol = None  # type: ignore
         self.ticker1, self.ticker2 = self.parse_pair()
         self.asks: TVALUES = [DEFAULT_VALUE]
@@ -114,23 +111,17 @@ class Exchange:
 
     def get_values(self, data: dict, key: str) -> list[Value]:
         return [
-            Value(*(float(i[0]), qty))
-            for i in data[key]
-            if (qty := float(i[1])) > 0
+            Value(*(float(i[0]), qty)) for i in data[key] if (qty := float(i[1])) > 0
         ]
 
     def _calc_best_ask(self) -> Value:
         return (
-            min(self.asks, key=lambda v: v.price)
-            if len(self.asks)
-            else DEFAULT_VALUE
+            min(self.asks, key=lambda v: v.price) if len(self.asks) else DEFAULT_VALUE
         )
 
     def _calc_best_bid(self) -> Value:
         return (
-            max(self.bids, key=lambda v: v.price)
-            if len(self.bids)
-            else DEFAULT_VALUE
+            max(self.bids, key=lambda v: v.price) if len(self.bids) else DEFAULT_VALUE
         )
 
     async def close(self):

@@ -35,7 +35,9 @@ class InterExchangeArbitrationStrategy:
         self.ftx_thread = Thread(target=asyncio.run, args=(self.ftx.start(),))
         self.binance_thread.start()
         self.ftx_thread.start()
-        logging.info(f"Started watching of the pair of currencies {self.pair} on the exchanges ftx and binance")
+        logging.info(
+            f"Started watching of the pair of currencies {self.pair} on the exchanges ftx and binance"
+        )
         self.binance_thread.join()
         self.ftx_thread.join()
 
