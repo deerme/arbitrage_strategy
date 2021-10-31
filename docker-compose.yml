@@ -1,0 +1,10 @@
+version: "2"
+
+services:
+
+  arbitrage:
+    container_name: arbitrage
+    build:
+      context: ./
+      dockerfile: arbitrage.dockerfile
+    command: python3 main.py
