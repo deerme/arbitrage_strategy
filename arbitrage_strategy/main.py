@@ -1,6 +1,7 @@
 import logging
 
 import orjson
+import uvloop
 
 from src.binance import Binance
 from src.ftx import FTX
@@ -30,4 +31,5 @@ def main():
 
 
 if __name__ == "__main__":
+    uvloop.install()
     main()
