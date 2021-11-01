@@ -8,3 +8,5 @@ services:
       context: ./
       dockerfile: arbitrage.dockerfile
     command: python3 main.py
+    volumes:
+      - ./arbitrage_strategy:/arbitrage_strategy
