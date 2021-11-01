@@ -18,6 +18,8 @@ if TYPE_CHECKING:
 
 
 EXTENSIONS = [ClientPerMessageDeflateFactory(client_max_window_bits=True)]
+INFINITY = float("inf")
+MINFINITY = float("-inf")
 
 
 @dataclass
@@ -33,8 +35,8 @@ class Orders(dict[float, float]):
         self, *args, value_setter: Callable, order: str, override_qty: Counter, **kwargs
     ) -> None:
         super().__init__(*args, **kwargs)
-        self.lowest_price = float("inf")
-        self.highest_price = float("-inf")
+        self.lowest_price = INFINITY
+        self.highest_price = MINFINITY
         self._value_setter = value_setter
         self._update_funk = getattr(self, f"update_{order}")
 
@@ -44,11 +46,14 @@ class Orders(dict[float, float]):
 
         # т.к. реальных сделок не совершается, необходимо отдельно учитывать
         # объёмы "купленной"/"проданной" валюты, чтобы исключить повторные сделки
-        # TODO: обнулять счетчик конкретной цены при обновлении от апи с количеством 0
+        # при нулевом количестве в ответе АПИ - счетчик также сбрасывается
         self._override_qty = override_qty
 
     def __setitem__(self, price: float, qty: float) -> None:
-        qty = round(qty - self._override_qty[price], 5)
+        if qty == 0:
+            self._override_qty[price] = 0
+        else:
+            qty = round(qty - self._override_qty[price], 5)
         if qty > 0:
             self._more0qty.add(price)
             if price > self.highest_price:
@@ -58,13 +63,9 @@ class Orders(dict[float, float]):
         elif qty <= 0:
             self._more0qty.discard(price)
             if price == self.highest_price:
-                self.highest_price = max(self._more0qty or [float("-inf")]) or float(
-                    "-inf"
-                )
+                self.highest_price = max(self._more0qty or [MINFINITY]) or MINFINITY
             elif price == self.lowest_price:
-                self.lowest_price = min(self._more0qty or [float("inf")]) or float(
-                    "inf"
-                )
+                self.lowest_price = min(self._more0qty or [INFINITY]) or INFINITY
         return super().__setitem__(price, qty)
 
     async def update_bid(self, highest_price: float, lowest_price: float) -> None:
