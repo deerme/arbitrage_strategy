@@ -1,5 +1,5 @@
 {
     "pair": "BTC/USDT",
-    "profit_size": 1,
+    "profit_size": 0.01,
     "demo": true
 }
