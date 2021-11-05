@@ -1,5 +1,4 @@
 import asyncio
-import logging
 from asyncio.exceptions import IncompleteReadError
 from collections import Counter
 from dataclasses import dataclass
@@ -8,10 +7,12 @@ from typing import TYPE_CHECKING, Callable, Iterable
 
 import orjson
 from aiohttp import ClientSession
+from loguru import logger
 from websockets.client import WebSocketClientProtocol, connect
 from websockets.connection import State
 from websockets.exceptions import ConnectionClosedError
-from websockets.extensions.permessage_deflate import ClientPerMessageDeflateFactory
+from websockets.extensions.permessage_deflate import \
+    ClientPerMessageDeflateFactory
 
 if TYPE_CHECKING:
     from src.strategy import InterExchangeArbitrationStrategy
@@ -128,6 +129,7 @@ class Exchange:
         self.timestamp = time()
 
         self._con: WebSocketClientProtocol | None = None
+        self._data_gained = 0
 
     @property
     def state_con(self) -> int:
@@ -190,36 +192,30 @@ class Exchange:
         await con.recv()
 
     async def start(self) -> None:
-        self.to_close = False
+        logger.info(f"Started {self.exchange_name}")
         await self._set_data()
-        while True:
-            self.to_reload = False
-            try:
-                async with connect(self.ws_host, extensions=EXTENSIONS) as con:
-                    self._con = con
-                    await self._subscribe_ws(con)
-                    async for data in con:
-                        data = orjson.loads(data).get("data")
-                        self.timestamp = time()
-                        await self.update_values(data)
-                        if self.to_close:
-                            return
-                        if self.to_reload:
-                            continue
-            except (IncompleteReadError, ConnectionClosedError) as e:
-                logging.error(e)
+        try:
+            async with connect(self.ws_host, extensions=EXTENSIONS) as con:
+                self._con = con
+                await self._subscribe_ws(con)
+                async for data in self._con:
+                    data = orjson.loads(data).get("data")
+                    self.timestamp = time()
+                    self._data_gained += 1
+                    await self.update_values(data)
+        except (IncompleteReadError, ConnectionClosedError) as e:
+            logger.error(e)
+
+    async def stop(self) -> None:
+        if self._con is not None:
+            await self._con.close()
+            self._con = None
 
     async def update_values(
         self, data: dict, bids_key: str | None = None, asks_key: str | None = None
     ) -> None:
         await self._bids._update(self.format_data(data[bids_key or self.bids_key]))
         await self._asks._update(self.format_data(data[asks_key or self.asks_key]))
-
-    def stop(self) -> None:
-        self.to_close = True
-
-    def reload(self) -> None:
-        self.to_reload = True
 
     async def purchase(self, qty: float) -> None:
         await asyncio.sleep(0.01)
