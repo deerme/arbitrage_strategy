@@ -1,15 +1,12 @@
 import asyncio
-import logging
 
 import orjson
 import uvloop
 
+from init_logging import setup_logging
 from src.binance import Binance
 from src.ftx import FTX
 from src.strategy import InterExchangeArbitrationStrategy
-
-format = "%(asctime)s: %(message)s"
-logging.basicConfig(format=format, level=logging.INFO, datefmt="%H:%M:%S")
 
 
 async def main():
@@ -28,9 +25,13 @@ async def main():
         binance=binance,
         ftx=ftx,
     )
-    await strategy.start()
+    strategy.start()
+    while True:
+        # TODO: прослушивать порт на сигнал для отсановки
+        await asyncio.sleep(60 * 60 * 24)
 
 
 if __name__ == "__main__":
     uvloop.install()
+    setup_logging()
     asyncio.run(main())
